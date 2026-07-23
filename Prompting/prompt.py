@@ -55,6 +55,7 @@ def main():
 
 
 # tools calling web search with stream 
+'''
 def main():
     response = client.responses.create(
         model = "gpt-4.1-mini",
@@ -74,11 +75,70 @@ def main():
     for event in response:
         if event.type == "response.output_text.delta":
             print(event.delta, end="", flush=True)
+'''
+
+def main():
+    response = client.responses.create(
+        model = "gpt-4.1-mini",
+        input="I need to solve the equation 3x + 11 = 14. Can you help me?",
+        tools = [
+            { "type": "code_interpreter",  "container": {"type": "auto"} },
+        ],
+        stream=True,
+    )
+    
+    for event in response:
+        if event.type == "response.output_text.delta":
+            print(event.delta, end="", flush=True)
+
 
 
 # OPENAI Compatibility (GEMINI/CLAUDE)
 # We can use same openai
-    
+
+#everything will be same as openai code, just in client base_url will come
+client = OpenAI(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+
+def OpenAIGoogleCompatible():
+    response = client.chat.completions.create(
+        model="gemini-3.6-flash",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": "Explain to me how AI works."
+            }
+        ],
+        stream=True,
+        extra_body={
+            'extra_body': {
+                "google": {
+                "thinking_config": {
+                    "thinking_level": "low",
+                    "include_thoughts": True
+                }
+                }
+            }
+        }
+    )
+
+    for chunk in response:
+        if not chunk.choices:
+            continue
+
+        content = chunk.choices[0].delta.content
+
+        if content:
+            print(content, end="", flush=True)
+
 if __name__ == "__main__":
-    print(main())
+    # print(main())
+    print(OpenAIGoogleCompatible())
+    
 
