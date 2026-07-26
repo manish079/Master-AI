@@ -96,19 +96,25 @@ def main():
 # OPENAI Compatibility (GEMINI/CLAUDE)
 # We can use same openai
 
+
+
 #everything will be same as openai code, just in client base_url will come
-client = OpenAI(
-    api_key=os.getenv("GEMINI_API_KEY"),
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-)
+# client = OpenAI(
+#     api_key=os.getenv("GEMINI_API_KEY"),
+#     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+# )
 
 def OpenAIGoogleCompatible():
     response = client.chat.completions.create(
-        model="gemini-3.6-flash",
+        model="gpt-4.1-mini",
         messages=[
             {
                 "role": "system",
                 "content": "You are a helpful assistant."
+            },
+             {
+                "role": "assistance",
+                "content": "Explain to me how AI works."
             },
             {
                 "role": "user",
@@ -136,9 +142,132 @@ def OpenAIGoogleCompatible():
 
         if content:
             print(content, end="", flush=True)
+            
+            
+            
+# Zero short prompting: model is given direct question or task without prior examples.
+
+# Few short prompting: We gives examples to LLM, its increase acurrasy 10times more
+# Ex:
+#     Q: Hey there,
+#     A: Hey, Nice to meet you. How can I help you today?
+
+        # Q; Hey, I want to learn Javascript
+        # A: Sure, Why don't you visit our website or Youtube at manishaivista for momre info
+        
+        # Q: I am bored
+        # A: What about a JS quiz?
+        
+
+# Chain of Thoughts(COT)(Deep Reaserch/Thinking): The model is encouraged to break down reasonnig step by step before arring an answer
+
+import json
+import time
+from openai import RateLimitError
+
+def ChainOfThoughtsPrompt():
+    
+    SYSTEM_PROMPT = """
+        You are an AI assistance who works on START, THIN and OUTPUT format.
+        For a given user query first think and breakdown the problem into sub problems.
+        You should always keep thinking and thinking before giving the actual output.
+        Also, before outputting the final result to user you must check once if everything is correct.
+        
+        Rules:
+        - Strictly follow the output JSON formate
+        - Always follow the output in sequnce that is START, THINK and OUTPUT.
+        - Always perform only one step at a time and wait for other step.
+        - Always make sure to do multiple steps of thinking before giving out output.
+        
+        Output JSON formate:
+        { "step": "START | THINK | OUTPUT", "content": string"}
+        
+        Example: 
+        User: Can you solve 3 + 4 * 10 - 4 * 3
+        ASSISTANT: { "step: START", "contnt": "The user wants me to solve 3 + 4 * 10 - 4 * 3 maths problem" }
+        ASSISTANT: { "step: THINK", "contnt": "This is typical math problem where we use BODMAS fomula for calculation" }
+        ASSISTANT: { "step: THINK", "contnt": "Lets breakdown the problem step by step" }
+        ASSISTANT: { "step: THINK", "contnt": "As per bodmas, first lets solve all multiplcations and divisions" }
+        ASSISTANT: { "step: THINK", "contnt": "So, first we need to solve 4 * 10 that is 40" }
+        ASSISTANT: { "step: THINK", "contnt": "Great, now the equation looks like 3 + 40 - 4 * 3" }
+        ASSISTANT: { "step: THINK", "contnt": "Now, I can see one more multiplication to be done that is 4 * 3 = 12" }
+        ASSISTANT: { "step: THINK", "contnt": "Great, now the equation looks like 3 + 40 - 12" }
+        ASSISTANT: { "step: THINK", "contnt": "As we have done all multiplications lets do the add and substrac" }
+        ASSISTANT: { "step: THINK", "contnt": "So, 3 + 40 = 43" }
+        ASSISTANT: { "step: THINK", "contnt": "new equations look like 43 - 12 which is 31" }
+        ASSISTANT: { "step: THINK", "contnt": "great, all steps are done and final result is 31" }
+        ASSISTANT: { "step: OUTPUT", "contnt": "3 + 4 * 10 - 4 * 3 = 31" }
+        
+          
+    """ 
+    
+    messages = [
+        
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        },
+        # {
+        #     "role": "user",
+        #     "content": "Hey, Can you solve 4 * 6 - 12 * 34 / 7 * 21"
+        # },
+        {
+            "role": "user",
+            "content": "Write a Python code to find Prime Numbers"
+        },
+        
+    ]
+    
+    while True:
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                # model="gemini-3.5-flash",
+                messages=messages
+            )        
+        
+        except RateLimitError:
+            print("⏳ Rate limit reached. Waiting 5 seconds...")
+            time.sleep(5)
+            continue
+    
+    
+        rawContent = response.choices[0].message.content
+        parseContent = json.loads(rawContent)
+        
+        # pass history 
+        messages.append({
+            "role" : "assistant",
+            "content": rawContent
+        })
+        
+        if parseContent["step"] == "START":
+            print(f'🔥 {parseContent["content"]}')
+            messages.append({
+                "role": "user",
+                "content": "Continue"
+            })
+            continue
+
+        elif parseContent["step"] == "THINK":
+            print(f'🧠 {parseContent["content"]}')
+            messages.append({
+                "role": "user",
+                "content": "Continue"
+            })
+            continue
+
+        elif parseContent["step"] == "OUTPUT":
+            print(f'🤖 {parseContent["content"]}')
+            break
+        
+        print("done...")            
+        
+    
 
 if __name__ == "__main__":
     # print(main())
-    print(OpenAIGoogleCompatible())
+    # print(OpenAIGoogleCompatible())
+    print(ChainOfThoughtsPrompt())
     
 
