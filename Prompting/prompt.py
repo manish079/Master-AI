@@ -288,7 +288,11 @@ def ChainOfThoughtsPrompt():
             print(f'🧠 {parseContent["content"]}')
             
             validation = validateResult(parseContent["content"])
-            print(f"✅ Validator: {validation}")
+            
+            if validation == "VALID":
+                print(f"✅ Validator: {validation}")
+            else:
+                print(f"❌ Validator: {validation}")
             
             messages.append({
                 "role": "developer",
