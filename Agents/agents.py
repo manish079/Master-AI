@@ -175,9 +175,14 @@ def ChainOfThoughtsPrompt():
         #     "content": "Tell me name of github user manish079"
         # },
         
-         {
-            "role": "user",
-            "content": "Create a folder todo_app and create a simple notes taking app using HTML, CSS and Javascript"
+        #  {
+        #     "role": "user",
+        #     "content": "Create a folder todo_app and create a simple notes taking app using HTML, CSS and Javascript"
+        # },
+        
+        {
+            "role": 'user',
+            "content": 'In the current directly, read the changes via git and push the changes to github with good commit message',
         },
         
     ]
@@ -197,7 +202,7 @@ def ChainOfThoughtsPrompt():
     
     
         rawContent = response.choices[0].message.content
-        parseContent = json.loads(rawContent)
+        # parseContent = json.loads(rawContent)
         
         try:
             parseContent = json.loads(rawContent)
@@ -216,7 +221,7 @@ def ChainOfThoughtsPrompt():
         })
         
         if parseContent["step"] == "START":
-            print(f'🔥 {parseContent["content"]}')
+            print(f'🔥 {parseContent.get("content", "")}')
             messages.append({
                 "role": "user",
                 "content": "Continue"
