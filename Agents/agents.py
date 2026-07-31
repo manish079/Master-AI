@@ -222,10 +222,10 @@ def ChainOfThoughtsPrompt():
         
         if parseContent["step"] == "START":
             print(f'🔥 {parseContent.get("content", "")}')
-            messages.append({
-                "role": "user",
-                "content": "Continue"
-            })
+            # messages.append({
+            #     "role": "user",
+            #     "content": "Continue"
+            # })
             continue
         
         
