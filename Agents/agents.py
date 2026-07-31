@@ -8,6 +8,8 @@ import time
 import aiohttp
 import asyncio
 from openai import RateLimitError
+import subprocess
+import platform
 
 load_dotenv()
 
@@ -42,11 +44,72 @@ async def getGithubUserInfo(username=None):
             }
             
         return data
+
+async def execute_commands(cmd):
+    try:
+        # Use PowerShell on Windows
+        if platform.system() == "Windows":
+            process = await asyncio.create_subprocess_exec(
+                "powershell",
+                "-Command",
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        else:
+            process = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+        stdout, stderr = await process.communicate()
+
+        stdout = stdout.decode("utf-8", errors="ignore").strip()
+        stderr = stderr.decode("utf-8", errors="ignore").strip()
+
+        if process.returncode != 0:
+            return {
+                "status": "error",
+                "message": stderr
+            }
+
+        return {
+            "status": "success",
+            "message": stdout
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
     
-    
+async def create_file(filename=None, content=None):
+    try:
+        # Convert escaped newlines into real newlines
+        content = content.replace("\\n", "\n")
+
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(content)
+
+        return {
+            "status": "success",
+            "message": f"{filename} created successfully"
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+        
+         
 TOOL_MAP = {
     "getWeatherDetailsByCity": getWeatherDetailsByCity,
-    "getUserGithubUserInfo": getGithubUserInfo
+    "getUserGithubUserInfo": getGithubUserInfo,
+    "execute_commands": execute_commands,
+      "create_file": create_file
 }
         
 def ChainOfThoughtsPrompt():
@@ -63,7 +126,8 @@ def ChainOfThoughtsPrompt():
         Available Tools:
         - getWeatherDetailsByCity(cityname: string): Return the current weather data
         - getUserGithubUserInfo(username: string): Returns the public information about the github user using github api
-        
+        - execute_commands(command: string): Takes a linux / unix command as arg and executes the command on user's machine and return the output 
+        - create_file(filename: string, content: string): Creates a file with the provided content.
         
         Rules:
         - Strictly follow the output JSON formate
@@ -103,9 +167,14 @@ def ChainOfThoughtsPrompt():
         #     "content": "What is the weather of Sirohi?"
         # },
         
+        #  {
+        #     "role": "user",
+        #     "content": "Tell me name of github user manish079"
+        # },
+        
          {
             "role": "user",
-            "content": "Tell me name of github user manish079"
+            "content": "Create a folder todo_app and create a simple notes taking app using HTML, CSS and Javascript"
         },
         
     ]
@@ -126,6 +195,16 @@ def ChainOfThoughtsPrompt():
     
         rawContent = response.choices[0].message.content
         parseContent = json.loads(rawContent)
+        
+        try:
+            parseContent = json.loads(rawContent)
+        except json.JSONDecodeError:
+            print("Invalid JSON received from model")
+            messages.append({
+                "role": "user",
+                "content": "Return only a single valid JSON object. No explanation, no markdown."
+            })
+            continue   
         
         # pass history 
         messages.append({
