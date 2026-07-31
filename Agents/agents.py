@@ -18,13 +18,15 @@ client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
+# This agent will give current weather
 async def getWeatherDetailsByCity(cityname=None):
     url = f"https://wttr.in/{cityname.lower()}?format=%C+%t"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.text()
-        
+
+# This agent will get user info
 async def getGithubUserInfo(username=None):
     url = f"https://api.github.com/users/{username.lower()}"
     async with aiohttp.ClientSession() as session:
@@ -45,6 +47,7 @@ async def getGithubUserInfo(username=None):
             
         return data
 
+# Agent for creating folder and file and it will do code
 async def execute_commands(cmd):
     try:
         # Use PowerShell on Windows
