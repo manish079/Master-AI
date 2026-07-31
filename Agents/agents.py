@@ -22,9 +22,31 @@ async def getWeatherDetailsByCity(cityname=None):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.text()
-
+        
+async def getGithubUserInfo(username=None):
+    url = f"https://api.github.com/users/{username.lower()}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            
+            if response.status != 200:
+                return {"error": f"GitHub API returned {response.status}"}
+            
+            data = await response.json()
+            return {
+                "login" : data.get("login"),
+                "name" : data.get("name"),
+                "location" :  data.get("location"),
+                "public_repos" : data.get("public_repos"),
+                "public_gists" : data.get("public_gists"),
+                "user_view_type" : data.get("user_view_type")
+            }
+            
+        return data
+    
+    
 TOOL_MAP = {
     "getWeatherDetailsByCity": getWeatherDetailsByCity,
+    "getUserGithubUserInfo": getGithubUserInfo
 }
         
 def ChainOfThoughtsPrompt():
@@ -34,6 +56,14 @@ def ChainOfThoughtsPrompt():
         For a given user query first think and breakdown the problem into sub problems.
         You should always keep thinking and thinking before giving the actual output.
         Also, before outputting the final result to user you must check once if everything is correct.
+        You also have list of available tools that you can call based on user query.
+        
+        For every tool call that you make, wait for the OBSERVATION from the tol which response from the tool that you called.
+        
+        Available Tools:
+        - getWeatherDetailsByCity(cityname: string): Return the current weather data
+        - getUserGithubUserInfo(username: string): Returns the public information about the github user using github api
+        
         
         Rules:
         - Strictly follow the output JSON formate
@@ -41,6 +71,7 @@ def ChainOfThoughtsPrompt():
         - Always perform only one step at a time and wait for other step.
         - Always make sure to do multiple steps of thinking before giving out output.
         - For every tool call always wait for the OBSERVE which contanis the output from tool.
+        
         
         Output JSON formate:
         { "step": "START | THINK | OUTPUT | OBSERVE | TOOL", "content": string", "tool_name" : "string", "input": "string"}
@@ -66,9 +97,15 @@ def ChainOfThoughtsPrompt():
             "role": "system",
             "content": SYSTEM_PROMPT
         },
-        {
+       
+        # {
+        #     "role": "user",
+        #     "content": "What is the weather of Sirohi?"
+        # },
+        
+         {
             "role": "user",
-            "content": "What is the weather of Sirohi?"
+            "content": "Tell me name of github user manish079"
         },
         
     ]
