@@ -93,6 +93,7 @@ import json
 import json
 import requests
 
+
 load_dotenv()
 
 
@@ -100,6 +101,15 @@ client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
 
+def get_sales_order():
+    # Query on our database
+    pass
+
+# for folder access
+# i can make PR for github or I can create folder and code like windsurf, cursor
+def run_command(command):
+    result = os.system(command=command)
+    return result
 
 def get_weather(city=None):
     
@@ -119,6 +129,10 @@ def init():
         "get_weather": {
             "fn": get_weather,
             "description": "Takes a city name as an input the current weather for the city"
+        },
+        "run_command": {
+            "fn": run_command,
+            "description": "Takes a command as input to execute on system and returns ouput"
         }
     }
     
@@ -142,8 +156,8 @@ def init():
             }}
         
         Avaiable Tools:
-            "get_weather": "Takes a city name as an input the current weather for the city"
-        
+           - "get_weather": "Takes a city name as an input the current weather for the city"
+            - run_command: Takes a command as input to execute on system and returns ouput
         
         Example:
         User Query: What is the weahter of New York?
